@@ -24,14 +24,23 @@ USERS_DIR = ROOT / "users" / "salesforce"
 CSV_COLUMNS = ["first_name", "last_name", "email", "profile", "permission_set_groups", "is_active"]
 
 ENV_FILE_MAP = {
-    "production":           "production.csv",
-    "uat":                  "uat.csv",
-    "tsit":                 "tsit.csv",
-    "sit":                  "sit.csv",
-    "full sandbox":         "full_sandbox.csv",
-    "partial copy sandbox": "partial_copy_sandbox.csv",
-    "developer sandbox":    "developer_sandbox.csv",
-    "developer pro sandbox":"developer_pro_sandbox.csv",
+    "prod":      "prod.csv",
+    "preprod":   "preprod.csv",
+    "uat":       "uat.csv",
+    "tsit":      "tsit.csv",
+    "sit":       "sit.csv",
+    "qa1":       "qa1.csv",
+    "qa1data":   "qa1data.csv",
+    "qa2":       "qa2.csv",
+    "qa2data":   "qa2data.csv",
+    "dev008":    "dev008.csv",
+    "dev010":    "dev010.csv",
+    "dev011":    "dev011.csv",
+    "dev012":    "dev012.csv",
+    "dev012data":"dev012data.csv",
+    "dev013":    "dev013.csv",
+    "dev014":    "dev014.csv",
+    "dev015":    "dev015.csv",
 }
 
 
