@@ -1,0 +1,9 @@
+# One profile per line. Lines starting with # are ignored.
+System Administrator
+Standard User
+Read Only
+Solution Manager
+Marketing User
+Contract Manager
+Chatter Free User
+Minimum Access - Salesforce

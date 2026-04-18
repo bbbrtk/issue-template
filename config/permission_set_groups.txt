@@ -1,0 +1,9 @@
+# One Permission Set Group per line. Lines starting with # are ignored.
+Sales Operations
+Service Operations
+Marketing Operations
+Finance Operations
+IT Administration
+Field Service
+Experience Cloud Manager
+Data Steward

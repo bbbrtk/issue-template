@@ -1,0 +1,6 @@
+# One environment per line. Lines starting with # are ignored.
+Production
+Full Sandbox
+Partial Copy Sandbox
+Developer Sandbox
+Developer Pro Sandbox

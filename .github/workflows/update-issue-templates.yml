@@ -1,0 +1,48 @@
+name: Update Issue Templates
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "config/environments.txt"
+      - "config/profiles.txt"
+      - "config/permission_set_groups.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-templates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ruamel.yaml
+
+      - name: Regenerate issue template dropdowns
+        id: regen
+        run: |
+          python scripts/update_templates.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Commit and push updated templates
+        if: steps.regen.outputs.exit_code == '0'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/ISSUE_TEMPLATE/
+          git commit -m "chore: sync issue template dropdowns from config files [skip ci]"
+          git push
