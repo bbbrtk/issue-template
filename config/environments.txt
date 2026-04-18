@@ -1,9 +1,18 @@
 # One environment per line. Lines starting with # are ignored.
-Production
+PROD
+PREPROD
 UAT
 TSIT
 SIT
-Full Sandbox
-Partial Copy Sandbox
-Developer Sandbox
-Developer Pro Sandbox
+QA1
+QA1data
+QA2
+QA2data
+DEV008
+DEV010
+DEV011
+DEV012
+DEV012data
+DEV013
+DEV014
+DEV015
