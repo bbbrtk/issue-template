@@ -1,0 +1,49 @@
+name: Notify Teams on Issue Opened
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send notification to Microsoft Teams
+        env:
+          ISSUE_TITLE:  ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_URL:    ${{ github.event.issue.html_url }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ', ') }}
+        run: |
+          payload=$(jq -n \
+            --arg  title  "$ISSUE_TITLE" \
+            --arg  url    "$ISSUE_URL" \
+            --arg  author "$ISSUE_AUTHOR" \
+            --arg  labels "$ISSUE_LABELS" \
+            --argjson number "$ISSUE_NUMBER" \
+            '{
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "themeColor": "0078D4",
+              "summary": ("New request: #" + ($number|tostring) + " – " + $title),
+              "sections": [{
+                "activityTitle": $title,
+                "activitySubtitle": ("Issue #" + ($number|tostring) + " · opened by **" + $author + "**"),
+                "facts": [
+                  { "name": "Type",   "value": $labels },
+                  { "name": "Link",   "value": ("[View Issue](" + $url + ")") }
+                ],
+                "markdown": true
+              }]
+            }')
+
+          http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            "${{ secrets.TEAMS_WEBHOOK_URL }}")
+
+          echo "Teams webhook responded with HTTP $http_code"
+          [ "$http_code" = "200" ] || exit 1
