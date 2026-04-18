@@ -1,5 +1,8 @@
 # One environment per line. Lines starting with # are ignored.
 Production
+UAT
+TSIT
+SIT
 Full Sandbox
 Partial Copy Sandbox
 Developer Sandbox
