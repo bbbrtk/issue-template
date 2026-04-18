@@ -1,0 +1,110 @@
+name: Sync Users to Salesforce
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "users/salesforce/**.csv"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout with depth 2 so HEAD~1 is available for diff ──────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      # ── Detect CSV row changes ──────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Detect changes and write operations.json
+        id: detect
+        run: |
+          python scripts/detect_changes.py
+          EXIT=$?
+          if [ $EXIT -eq 2 ]; then
+            echo "has_ops=false" >> "$GITHUB_OUTPUT"
+          elif [ $EXIT -eq 0 ]; then
+            echo "has_ops=true"  >> "$GITHUB_OUTPUT"
+            echo "--- operations.json ---"
+            cat operations.json
+          else
+            exit 1
+          fi
+
+      # ── Install Salesforce CLI ──────────────────────────────────────────────
+      - name: Install Salesforce CLI
+        if: steps.detect.outputs.has_ops == 'true'
+        run: npm install --global @salesforce/cli@latest --silent
+
+      # ── Process every operation ─────────────────────────────────────────────
+      # SF_AUTH_URLS secret must be a JSON object mapping ENV name to SFDX auth URL:
+      #   { "PROD": "force://...", "UAT": "force://...", ... }
+      # Generate an SFDX auth URL with: sf org display --verbose --json | jq '.result.sfdxAuthUrl'
+      - name: Run Apex operations against target orgs
+        if: steps.detect.outputs.has_ops == 'true'
+        env:
+          SF_AUTH_URLS: ${{ secrets.SF_AUTH_URLS }}
+        run: |
+          set -euo pipefail
+
+          TOTAL=$(jq 'length' operations.json)
+          echo "Processing $TOTAL operation(s)..."
+
+          for i in $(seq 0 $((TOTAL - 1))); do
+            OP=$(jq -c ".[$i]" operations.json)
+            OPERATION=$(echo   "$OP" | jq -r '.operation')
+            ENVIRONMENT=$(echo "$OP" | jq -r '.environment')
+            EMAIL=$(echo       "$OP" | jq -r '.email')
+
+            echo ""
+            echo "━━━ [$((i+1))/$TOTAL] $OPERATION → $EMAIL @ $ENVIRONMENT ━━━"
+
+            # ── Look up auth URL for this environment ─────────────────────────
+            AUTH_URL=$(echo "$SF_AUTH_URLS" | jq -r --arg env "$ENVIRONMENT" '.[$env] // empty')
+            if [ -z "$AUTH_URL" ]; then
+              echo "WARNING: No SF_AUTH_URLS entry for environment '$ENVIRONMENT'. Skipping."
+              continue
+            fi
+
+            # ── Authenticate ──────────────────────────────────────────────────
+            ALIAS="sync-target-${ENVIRONMENT,,}"
+            echo "$AUTH_URL" | sf org login sfdx-url \
+              --stdin \
+              --set-default \
+              --alias "$ALIAS"
+
+            # ── Generate Apex from template ───────────────────────────────────
+            python scripts/generate_apex.py "$OPERATION" "$OP" > /tmp/apex_script.apex
+            echo "Generated Apex script for operation: $OPERATION"
+
+            # ── Execute Apex ──────────────────────────────────────────────────
+            sf apex run \
+              --target-org "$ALIAS" \
+              --file /tmp/apex_script.apex \
+              --json | tee /tmp/apex_result.json
+
+            # Check for Apex errors in the result
+            APEX_STATUS=$(jq -r '.status' /tmp/apex_result.json)
+            if [ "$APEX_STATUS" != "0" ]; then
+              echo "ERROR: Apex execution failed for $EMAIL @ $ENVIRONMENT"
+              jq '.result.exceptionMessage, .result.exceptionStackTrace' /tmp/apex_result.json
+              exit 1
+            fi
+
+            # Print DEBUG lines from Apex logs
+            jq -r '.result.logs // ""' /tmp/apex_result.json | grep -E "DEBUG|WARNING" || true
+
+            # ── Logout ────────────────────────────────────────────────────────
+            sf org logout --target-org "$ALIAS" --no-prompt
+          done
+
+          echo ""
+          echo "All operations completed successfully."
