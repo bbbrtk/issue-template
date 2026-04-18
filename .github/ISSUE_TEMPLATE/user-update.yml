@@ -1,0 +1,100 @@
+name: User Update
+description: Request an update to an existing Salesforce user (profile, permissions, or details)
+title: "[USER UPDATE] "
+labels: ["user-management", "user-update"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Salesforce User Update Request
+        Provide the user's current details and the desired new values. Leave fields unchanged if no update is needed.
+
+  - type: markdown
+    attributes:
+      value: "### Current User Details"
+
+  - type: input
+    id: first_name
+    attributes:
+      label: First Name
+      description: Current first name (update value if changing)
+      placeholder: e.g. John
+    validations:
+      required: true
+
+  - type: input
+    id: last_name
+    attributes:
+      label: Last Name
+      description: Current last name (update value if changing)
+      placeholder: e.g. Smith
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: Email
+      description: Current email used to identify the user account
+      placeholder: e.g. john.smith@company.com
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: "### Requested Changes"
+
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Profile
+      description: Select the new profile to assign (select current profile if not changing)
+      options:
+        - System Administrator
+        - Standard User
+        - Read Only
+        - Solution Manager
+        - Marketing User
+        - Contract Manager
+        - Chatter Free User
+        - Minimum Access - Salesforce
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Select the target Salesforce environment
+      options:
+        - Production
+        - Full Sandbox
+        - Partial Copy Sandbox
+        - Developer Sandbox
+        - Developer Pro Sandbox
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: permission_set_groups
+    attributes:
+      label: Permission Set Groups
+      description: Select the desired final set of Permission Set Groups (all checked groups will be assigned; unchecked groups will be removed)
+      options:
+        - label: Sales Operations
+        - label: Service Operations
+        - label: Marketing Operations
+        - label: Finance Operations
+        - label: IT Administration
+        - label: Field Service
+        - label: Experience Cloud Manager
+        - label: Data Steward
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for Update
+      description: Briefly describe why this update is needed
+      placeholder: e.g. Role change, department transfer, additional responsibilities
+    validations:
+      required: true

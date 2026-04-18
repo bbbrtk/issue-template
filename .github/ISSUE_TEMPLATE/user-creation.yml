@@ -1,0 +1,81 @@
+name: User Creation
+description: Request creation of a new Salesforce user
+title: "[USER CREATION] "
+labels: ["user-management", "user-creation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## New Salesforce User Request
+        Fill in all required fields. The request will be processed after approval.
+
+  - type: input
+    id: first_name
+    attributes:
+      label: First Name
+      placeholder: e.g. John
+    validations:
+      required: true
+
+  - type: input
+    id: last_name
+    attributes:
+      label: Last Name
+      placeholder: e.g. Smith
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: Email
+      description: Must be a valid corporate email address
+      placeholder: e.g. john.smith@company.com
+    validations:
+      required: true
+
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Profile
+      description: Select the Salesforce profile to assign to this user
+      options:
+        - System Administrator
+        - Standard User
+        - Read Only
+        - Solution Manager
+        - Marketing User
+        - Contract Manager
+        - Chatter Free User
+        - Minimum Access - Salesforce
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Select the target Salesforce environment
+      options:
+        - Production
+        - Full Sandbox
+        - Partial Copy Sandbox
+        - Developer Sandbox
+        - Developer Pro Sandbox
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: permission_set_groups
+    attributes:
+      label: Permission Set Groups
+      description: Select all Permission Set Groups to assign to this user (optional)
+      options:
+        - label: Sales Operations
+        - label: Service Operations
+        - label: Marketing Operations
+        - label: Finance Operations
+        - label: IT Administration
+        - label: Field Service
+        - label: Experience Cloud Manager
+        - label: Data Steward
