@@ -1,0 +1,75 @@
+name: Process Issue → CSV Pull Request
+
+on:
+  issues:
+    types:
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  process:
+    # Only run for user-management issues
+    if: contains(github.event.issue.labels.*.name, 'user-management')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Parse issue and update CSV
+        id: process
+        env:
+          ISSUE_BODY:   ${{ github.event.issue.body }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+        run: python scripts/process_issue.py
+
+      - name: Create branch, commit and open PR
+        env:
+          GH_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE:  ${{ github.event.issue.title }}
+          OPERATION:    ${{ steps.process.outputs.operation }}
+          FIRST_NAME:   ${{ steps.process.outputs.first_name }}
+          LAST_NAME:    ${{ steps.process.outputs.last_name }}
+          EMAIL:        ${{ steps.process.outputs.email }}
+          ENVIRONMENT:  ${{ steps.process.outputs.environment }}
+          CSV_FILE:     ${{ steps.process.outputs.csv_file }}
+        run: |
+          BRANCH="user-mgmt/issue-${ISSUE_NUMBER}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add users/salesforce/
+          git commit -m "chore(users): ${OPERATION} ${FIRST_NAME} ${LAST_NAME} <${EMAIL}> in ${ENVIRONMENT} (closes #${ISSUE_NUMBER})"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --title "[User ${OPERATION^}] ${FIRST_NAME} ${LAST_NAME} – ${ENVIRONMENT} (#${ISSUE_NUMBER})" \
+            --body "$(cat <<EOF
+          ## Summary
+
+          Automated CSV update generated from issue #${ISSUE_NUMBER}.
+
+          | Field       | Value |
+          |-------------|-------|
+          | Operation   | ${OPERATION} |
+          | User        | ${FIRST_NAME} ${LAST_NAME} |
+          | Email       | ${EMAIL} |
+          | Environment | ${ENVIRONMENT} |
+          | File        | \`users/salesforce/${CSV_FILE}\` |
+
+          Closes #${ISSUE_NUMBER}
+          EOF
+          )" \
+            --base main \
+            --head "$BRANCH" \
+            --label "user-management"

@@ -1,0 +1,4 @@
+first_name,last_name,email,profile,permission_set_groups,is_active
+Alice,Walker,alice.walker@company.com,System Administrator,IT Administration,true
+Henry,Osei,henry.osei@company.com,Standard User,Sales Operations|Field Service,true
+Iris,Novak,iris.novak@company.com,Read Only,,true
